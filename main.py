@@ -172,8 +172,8 @@ while True:
       state_entry = False
       rgb_led.set_blink("WHITE")
       display_thread.clear()
-      streamer = Streamer(AUDIO_SERVICE, "radio-fx.wav")
-      streamer.play()
+      streamer_fx = Streamer(AUDIO_SERVICE, "radio-fx.wav")
+      streamer_fx.play()
 
     # Normal operation
     else:
@@ -226,9 +226,10 @@ while True:
       longitude = database.stations_data[location]["coords"]["e"]
 
       # Play the top station
-      streamer.stop() # stop the radio-fx if still playin
       streamer = Streamer(AUDIO_SERVICE, url_list[jog])
       streamer.play()
+      time.sleep(2) # let the radio stream start properly
+      streamer_fx.stop() # stop after starting the real stream !
 
     # Exit back to tuning state if latch has 'come unstuck'
     elif not encoders_thread.is_latched():
