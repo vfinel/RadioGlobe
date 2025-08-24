@@ -172,6 +172,8 @@ while True:
       state_entry = False
       rgb_led.set_blink("WHITE")
       display_thread.clear()
+      streamer = Streamer(AUDIO_SERVICE, "radio-fx.wav")
+      streamer.play()
 
     # Normal operation
     else:
@@ -217,13 +219,14 @@ while True:
       jog = 0
       last_jog = 0
       rgb_led.set_static("RED", timeout_sec=3.0)
-      streamer = None
+      # streamer = None # pas sur que ca soit necessaire vu qu'il est recrée juste en dessous
 
       # Get display coordinates - from file, so there's no jumping about
       latitude = database.stations_data[location]["coords"]["n"]
       longitude = database.stations_data[location]["coords"]["e"]
 
       # Play the top station
+      streamer.stop() # stop the radio-fx if still playin
       streamer = Streamer(AUDIO_SERVICE, url_list[jog])
       streamer.play()
 
