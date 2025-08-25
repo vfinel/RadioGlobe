@@ -12,6 +12,8 @@ from positional_encoders import *
 from ui_manager import UI_Manager
 from rgb_led import RGB_LED
 from scheduler import Scheduler
+import os
+import random
 
 AUDIO_SERVICE = "pulse"
 VOLUME_INCREMENT = 5
@@ -154,6 +156,10 @@ scheduler.start()
 
 set_volume(volume)
 
+fx_folder = "radio-fx"
+fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
+
+
 while True:
   if state == "start":
     # Entry - setup state
@@ -172,7 +178,8 @@ while True:
       state_entry = False
       rgb_led.set_blink("WHITE")
       display_thread.clear()
-      streamer_fx = Streamer(AUDIO_SERVICE, "radio-fx.wav")
+      fx_file = random.choice(fx_files)
+      streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
       streamer_fx.play()
 
     # Normal operation
