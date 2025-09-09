@@ -161,6 +161,9 @@ fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
 
 
 while True:
+  if state_entry:
+    logging.info(f"entering {state = }")
+
   if state == "start":
     # Entry - setup state
     if state_entry:
