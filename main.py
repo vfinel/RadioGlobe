@@ -12,6 +12,8 @@ from positional_encoders import *
 from ui_manager import UI_Manager
 from rgb_led import RGB_LED
 from scheduler import Scheduler
+import os
+import random
 
 AUDIO_SERVICE = "pulse"
 VOLUME_INCREMENT = 5
@@ -154,6 +156,10 @@ scheduler.start()
 
 set_volume(volume)
 
+fx_folder = "radio-fx"
+fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
+
+
 while True:
   if state == "start":
     # Entry - setup state
@@ -172,6 +178,9 @@ while True:
       state_entry = False
       rgb_led.set_blink("WHITE")
       display_thread.clear()
+      fx_file = random.choice(fx_files)
+      streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
+      streamer_fx.play()
 
     # Normal operation
     else:
@@ -226,6 +235,8 @@ while True:
       # Play the top station
       streamer = Streamer(AUDIO_SERVICE, url_list[jog])
       streamer.play()
+      time.sleep(2) # let the radio stream start properly
+      streamer_fx.stop() # stop after starting the real stream !
 
     # Exit back to tuning state if latch has 'come unstuck'
     elif not encoders_thread.is_latched():
@@ -260,7 +271,7 @@ while True:
     if state_entry:
       state_entry = False
       display_thread.clear()
-      time.sleep(0.1)
+      time.sleep(0.2)
       display_thread.message(
         line_1="Really shut down?",
         line_2="<- Press mid button ",
@@ -274,12 +285,13 @@ while True:
     if state_entry:
       state_entry = False
       display_thread.clear()
-      time.sleep(0.1)
+      time.sleep(0.2)
       display_thread.message(
         line_1="Shutting down...",
         line_2="Please wait 10 sec",
         line_3="before disconnecting",
         line_4="power.")
+      time.sleep(0.1) # make sure the message is fully displayed
       subprocess.run(["sudo", "poweroff"])
 
   else:

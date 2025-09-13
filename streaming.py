@@ -11,6 +11,8 @@ import requests
 from requests.exceptions import Timeout
 import concurrent.futures
 import logging
+import librosa 
+import numpy as np
 
 mixer_name = None
 
@@ -51,8 +53,19 @@ def check_url(url) -> str:
 
 def launch(audio, url) -> 'pid':
     """Play url returning the vlc pid"""
-    logging.info("Launching audio: %s, %s", audio, url)
-    radio = subprocess.Popen(['cvlc', '--aout', audio, url])
+    if '.wav' in url: # special case for noise fx 
+        noise_arg = f"--loop"
+
+    else:
+        noise_arg = ""
+    
+    # Build VLC argument list properly
+    cvlc_args = ['cvlc', noise_arg, '--aout', audio, url]
+    # # if noise_arg:
+    # #     cvlc_args += noise_arg.split()
+    # cvlc_args.append(url)
+    logging.info(f"Launching audio (with options '{' '.join(cvlc_args)}')")
+    radio = subprocess.Popen(cvlc_args)
     return radio.pid
 
 
