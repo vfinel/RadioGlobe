@@ -56,30 +56,37 @@ def check_url(url) -> str:
 
 def launch(audio, url) -> "pid":
     """Play url returning the vlc pid"""
-    # if '.wav' in url: # special case for noise fx
-    #     noise_arg = f"--loop"
-
-    # else:
-    #     noise_arg = ""
-
-    # # Build VLC argument list properly
-    # cvlc_args = ['cvlc', noise_arg, '--aout', audio, url]
-
-    # # # if noise_arg:
-    # # #     cvlc_args += noise_arg.split()
-    # # cvlc_args.append(url)
-
-    # logging.info(f"Launching audio (with options '{' '.join(cvlc_args)}')")
-    # radio = subprocess.Popen(cvlc_args)
 
     logging.debug("Launching audio: %s, %s", audio, url)
+
     # note that cvlc output is hidden, but one way want to look at it for debug
     # purposes, in such a case remove the stdout and stderr options
-    radio = subprocess.Popen(
-        ["cvlc", "--aout", audio, url],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-    )
+    stdout = subprocess.DEVNULL
+    stderr = subprocess.STDOUT
+
+    cvlc_args = ["cvlc", "--aout", audio]  # will be completed below
+    if ".wav" not in url:  # radio stream
+        cvlc_args.append(url)
+        radio = subprocess.Popen(cvlc_args, stdout=stdout, stderr=stderr)
+
+    else:  # noise fx file
+        # Play once from a random start time, then loop the whole file from the beginning
+        # TODO: way to long to get file duration
+        #   - run analysis once, and store in a csv file ?
+        #   - with enough files, that wouln't be a problem
+        logging.info("getting file duration...")
+        noise_duration = librosa.get_duration(path=url)
+        logging.info(f"duration is {noise_duration:.1f} seconds")
+        start_time = np.random.uniform(0, noise_duration)
+
+        # First, play from random_start to the end
+        command = cvlc_args + ["--play-and-exit", "--start-time", str(start_time), url]
+        subprocess.run(command, check=True)
+
+        # Then, loop the whole file
+        radio = subprocess.Popen(
+            cvlc_args + ["--loop", url], stdout=stdout, stderr=stderr
+        )
 
     return radio.pid
 
