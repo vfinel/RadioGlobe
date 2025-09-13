@@ -1,46 +1,44 @@
 import pandas as pd
 import json
 
-filepath = r"C:\Users\v.finel\Desktop\stations.json"
+# Load the stations JSON data
+# json_path = r"C:\Users\v.finel\Desktop\stations.json"
+json_path = r"stations.json"
+with open(json_path, 'r', encoding='utf-8') as f:
+    data = json.load(f)
 
-# Read the JSON file
-with open(filepath, 'r', encoding='utf-8') as f:
-	data = json.load(f)
+# Flatten JSON into a DataFrame for lookup
+data_list = [(loc, radio['name'], radio['url'])
+             for loc in data.keys()
+             for radio in data[loc]['urls']]
 
-# # Load into a pandas DataFrame
-# df = pd.DataFrame(data)
+stations_df = pd.DataFrame.from_records(data_list, columns=['location', 'name', 'url'])
+print('stations: \n{stations_df.head()}')
 
+# Load the CSV file
+csv_path = 'get_radio_url.csv'
+csv_df = pd.read_csv(csv_path)
 
-# create dataframe 
-# https://stackoverflow.com/questions/13575090/construct-pandas-dataframe-from-items-in-nested-dictionary
+# # Clean up whitespace in column names and values
+# csv_df.columns = [col.strip() for col in csv_df.columns]
+# csv_df['location'] = csv_df['location'].str.strip()
+# csv_df['name'] = csv_df['name'].str.strip()
 
-data_dict = {(loc,radio['name']): radio['url'] 
-                           for loc in data.keys() 
-                           for radio in data[loc]['urls']}
+print(csv_df.head())
 
-# df = pd.DataFrame.from_dict(data_dict, orient='index')
+# Fill missing URLs
+for idx, row in csv_df.iterrows():
+    if pd.isna(row['url']) or not str(row['url']).strip():
+        # Try to find a match in the stations DataFrame
+        # print(f"looking for '{row['name']}' in '{row['location']}'")
+        query_loc = row['location'].lower().replace(' ', '')
+        query_name = row['name'].lower()
+        match = stations_df[(stations_df['name'].str.lower() == query_name) & (stations_df['name'].str.lower() == query_name)]
+        # print(match)
+        if not match.empty:
+            csv_df.at[idx, 'url'] = match.iloc[0]['url']
+            print(f"Filled URL for {row['name']} in {row['location']}")
 
-data_list = [(loc,radio['name'],radio['url']) 
-                           for loc in data.keys() 
-                           for radio in data[loc]['urls']]
-
-df = pd.DataFrame.from_records(data_list, columns=['location','name','url'])
-	
-# Display the DataFrame
-print(f'{df.head()}')
-
-# Example inputs
-input_loc = 'Abuja,NG'
-input_radio_name = "Cool FM 969" #"ABN Radio"
-
-try:
-    line = df[(df['location']==input_loc) & (df['name']==input_radio_name)]
-    url = line['url'].values[0]
-    print(f'{input_radio_name}, in {input_loc}, url is = {url}')
-
-except KeyError:
-    url = None
-    print(f'no match for {input_loc=} and {input_radio_name=}')
-
-
-print('exiting ')
+# Write the completed data back to the CSV file
+csv_df.to_csv(csv_path, index=False)
+print('Completed missing URLs and updated get_radio_url.csv')
