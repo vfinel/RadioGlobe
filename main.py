@@ -13,6 +13,7 @@ from ui_manager import UI_Manager
 from rgb_led import RGB_LED
 from scheduler import Scheduler
 
+# global  variables (because defined outside any function)
 AUDIO_SERVICE = "pulse"
 VOLUME_INCREMENT = 5
 
