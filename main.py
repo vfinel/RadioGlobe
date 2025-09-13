@@ -16,6 +16,7 @@ import os
 import random
 import vlc
 
+# global  variables (because defined outside any function)
 AUDIO_SERVICE = "pulse"
 VOLUME_INCREMENT = 5
 
