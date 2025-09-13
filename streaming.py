@@ -11,7 +11,7 @@ import requests
 from requests.exceptions import Timeout
 import concurrent.futures
 import logging
-import librosa 
+import librosa
 import numpy as np
 
 mixer_name = None
@@ -22,8 +22,11 @@ def set_volume(percent: int) -> int:
     global mixer_name
 
     if not mixer_name:
-        get_control = subprocess.run(['amixer', 'scontrols'], stdout=subprocess.PIPE)
-        control_match = re.match(r"Simple mixer control \'(.*)\'", str(get_control.stdout, encoding="utf-8").rstrip())
+        get_control = subprocess.run(["amixer", "scontrols"], stdout=subprocess.PIPE)
+        control_match = re.match(
+            r"Simple mixer control \'(.*)\'",
+            str(get_control.stdout, encoding="utf-8").rstrip(),
+        )
         if control_match:
             mixer_name = control_match.group(1)
 
@@ -31,7 +34,7 @@ def set_volume(percent: int) -> int:
         percent = 100
     elif percent < 0:
         percent = 0
-    subprocess.run(['amixer', 'set', mixer_name, ('{}%').format(percent)])
+    subprocess.run(["amixer", "set", mixer_name, ("{}%").format(percent)])
 
     # Return the percent volume, so that the caller doesn't have to handle capping to 0-100
     return percent
@@ -42,34 +45,46 @@ def check_url(url) -> str:
     try:
         response = requests.get(url, timeout=0.1)
     except Timeout as e:
-        print(f'URL Timeout, {url}, {e}')
+        print(f"URL Timeout, {url}, {e}")
     except Exception as e:
-        print(f'URL error, {url}, {e}')
+        print(f"URL error, {url}, {e}")
     else:
         if response.status_code == requests.codes.ok:
             return url
     return None
 
 
-def launch(audio, url) -> 'pid':
+def launch(audio, url) -> "pid":
     """Play url returning the vlc pid"""
-    if '.wav' in url: # special case for noise fx 
-        noise_arg = f"--loop"
+    # if '.wav' in url: # special case for noise fx
+    #     noise_arg = f"--loop"
 
-    else:
-        noise_arg = ""
-    
-    # Build VLC argument list properly
-    cvlc_args = ['cvlc', noise_arg, '--aout', audio, url]
-    # # if noise_arg:
-    # #     cvlc_args += noise_arg.split()
-    # cvlc_args.append(url)
-    logging.info(f"Launching audio (with options '{' '.join(cvlc_args)}')")
-    radio = subprocess.Popen(cvlc_args)
+    # else:
+    #     noise_arg = ""
+
+    # # Build VLC argument list properly
+    # cvlc_args = ['cvlc', noise_arg, '--aout', audio, url]
+
+    # # # if noise_arg:
+    # # #     cvlc_args += noise_arg.split()
+    # # cvlc_args.append(url)
+
+    # logging.info(f"Launching audio (with options '{' '.join(cvlc_args)}')")
+    # radio = subprocess.Popen(cvlc_args)
+
+    logging.debug("Launching audio: %s, %s", audio, url)
+    # note that cvlc output is hidden, but one way want to look at it for debug
+    # purposes, in such a case remove the stdout and stderr options
+    radio = subprocess.Popen(
+        ["cvlc", "--aout", audio, url],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+    )
+
     return radio.pid
 
 
-class Streamer ():
+class Streamer:
     """A streaming audio player using vlc's command line"""
 
     def __init__(self, audio, url):
@@ -83,7 +98,7 @@ class Streamer ():
             try:
                 # Play streamer in a separate process
                 ex = executor.submit(launch, self.audio, self.url)
-                logging.info("Pool Executor: %s, %s", self.audio, self.url)
+                logging.debug("Pool Executor: %s, %s", self.audio, self.url)
             except Exception as e:
                 logging.info("Pool Executor error: %s", e)
             else:
@@ -103,27 +118,26 @@ class Streamer ():
 
 
 if __name__ == "__main__":
-
-    stations_file = 'stations.json'
-    audio = 'alsa'  # or pulse
+    stations_file = "stations.json"
+    audio = "alsa"  # or pulse
     clip_duration = 10
 
-    with Path(stations_file).open(mode='r') as f:
+    with Path(stations_file).open(mode="r") as f:
         stations = json.load(f)
 
     # Get list of urls
-    url_list = [url['url'].strip() for k, v in stations.items() for url in v['urls']]
+    url_list = [url["url"].strip() for k, v in stations.items() for url in v["urls"]]
     urls = list(set(url_list))  # De-duped list
 
-    print(f'{len(urls)} URLs')
+    print(f"{len(urls)} URLs")
 
     while True:
         for url in urls:
             i = urls.index(url)
             if not check_url(url):
-                print(f'Bad URL, {i}, {url}')
+                print(f"Bad URL, {i}, {url}")
             else:
-                print(f'Playing URL, {i}, {url}')
+                print(f"Playing URL, {i}, {url}")
                 streamer = Streamer(audio, url)
                 streamer.play()
                 time.sleep(clip_duration)
