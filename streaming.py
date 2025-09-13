@@ -51,8 +51,10 @@ def check_url(url) -> str:
 
 def launch(audio, url) -> 'pid':
     """Play url returning the vlc pid"""
-    logging.info("Launching audio: %s, %s", audio, url)
-    radio = subprocess.Popen(['cvlc', '--aout', audio, url])
+    logging.debug("Launching audio: %s, %s", audio, url)
+    # note that cvlc output is hidden, but one way want to look at it for debug 
+    # purposes, in such a case remove the stdout and stderr options 
+    radio = subprocess.Popen(['cvlc', '--aout', audio, url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     return radio.pid
 
 
@@ -70,7 +72,7 @@ class Streamer ():
             try:
                 # Play streamer in a separate process
                 ex = executor.submit(launch, self.audio, self.url)
-                logging.info("Pool Executor: %s, %s", self.audio, self.url)
+                logging.debug("Pool Executor: %s, %s", self.audio, self.url)
             except Exception as e:
                 logging.info("Pool Executor error: %s", e)
             else:

@@ -155,6 +155,10 @@ scheduler.start()
 set_volume(volume)
 
 while True:
+  if state_entry:
+    print(' ')  # add line to ease consol output reading
+    logging.info(f"entering {state = }")
+
   if state == "start":
     # Entry - setup state
     if state_entry:
