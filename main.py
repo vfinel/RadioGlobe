@@ -149,6 +149,28 @@ def Process_UI_Events():
                 pass
 
 
+def update_display():
+    # Add arrows to the display if there is more than one station here
+    if len(stations_list) > 1:
+        display_thread.update(
+            latitude,
+            longitude,
+            location_name,
+            volume_disp,
+            stations_list[jog],
+            True,
+        )
+    elif len(stations_list) == 1:
+        display_thread.update(
+            latitude,
+            longitude,
+            location_name,
+            volume_disp,
+            stations_list[jog],
+            False,
+        )
+
+
 # PROGRAM START
 database.Load_Map()
 encoder_offsets = database.Load_Calibration()
@@ -259,6 +281,7 @@ while True:
             longitude = database.stations_data[location]["coords"]["e"]
 
             # Play the top station
+            update_display()  # update display here (otherwie the sleep() is messing things up)
             streamer = Streamer(AUDIO_SERVICE, url_list[jog])
             streamer.play()
 
@@ -293,25 +316,7 @@ while True:
             else:
                 volume_disp = 0
 
-            # Add arrows to the display if there is more than one station here
-            if len(stations_list) > 1:
-                display_thread.update(
-                    latitude,
-                    longitude,
-                    location_name,
-                    volume_disp,
-                    stations_list[jog],
-                    True,
-                )
-            elif len(stations_list) == 1:
-                display_thread.update(
-                    latitude,
-                    longitude,
-                    location_name,
-                    volume_disp,
-                    stations_list[jog],
-                    False,
-                )
+            update_display()
 
     elif state == "shutdown_confirm":
         if state_entry:
