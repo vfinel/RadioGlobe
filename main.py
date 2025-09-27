@@ -23,21 +23,22 @@ jog = 0
 last_jog = 0
 state_entry = True
 
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 ui_manager = UI_Manager()
+
 
 # This is used to increase the size of the area searched around the coords
 # For example, fuzziness 2, latitude 50 and longitude 0 will result in a
 # search square 48,1022 to 52,2 (with encoder resolution 1024)
-def Look_Around(latitude:int, longitude:int, fuzziness:int):
-  # Offset fuzziness, so 0 means only the given coords
-  fuzziness += 1
+def Look_Around(latitude: int, longitude: int, fuzziness: int):
+    # Offset fuzziness, so 0 means only the given coords
+    fuzziness += 1
 
-  search_coords = []
+    search_coords = []
 
-  # Work out how big the perimeter is for each layer out from the origin
-  ODD_NUMBERS = [((i * 2) + 1) for i in range(0, fuzziness)]
+    # Work out how big the perimeter is for each layer out from the origin
+    ODD_NUMBERS = [((i * 2) + 1) for i in range(0, fuzziness)]
 
   # With each 'layer' of fuzziness we need a starting point.  70% of people are right-eye dominant and
   # the globe is likely to be below the user, so go down and left first then scan horizontally, moving up
@@ -52,17 +53,22 @@ def Look_Around(latitude:int, longitude:int, fuzziness:int):
   return search_coords
 
 def Back_To_Tuning():
-  global state
-  global state_entry
+    global state
+    global state_entry
+
+    if state != "tuning":
+        state = "tuning"
+        state_entry = True
 
   if state != "tuning":
     state = "tuning"
     state_entry = True
 
 def Clear_Volume_Display():
-  global volume_display
+    global volume_display
 
-  volume_display = False
+    volume_display = False
+
 
 def Process_UI_Events():
   global state
@@ -140,7 +146,9 @@ database.Load_Map()
 encoder_offsets = database.Load_Calibration()
 
 # Positional encoders - used to select latitude and longitude
-encoders_thread = Positional_Encoders(2, "Encoders", encoder_offsets[0], encoder_offsets[1])
+encoders_thread = Positional_Encoders(
+    2, "Encoders", encoder_offsets[0], encoder_offsets[1]
+)
 encoders_thread.start()
 
 display_thread = Display(3, "Display")
