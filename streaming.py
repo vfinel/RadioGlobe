@@ -64,29 +64,18 @@ def launch(audio, url) -> "pid":
     stdout = subprocess.DEVNULL
     stderr = subprocess.STDOUT
 
-    cvlc_args = ["cvlc", "--aout", audio]  # will be completed below
+    cvlc_args = f"cvlc --aout {audio} {url}"
     if ".wav" not in url:  # radio stream
-        cvlc_args.append(url)
-        radio = subprocess.Popen(cvlc_args, stdout=stdout, stderr=stderr)
+        radio = subprocess.Popen(cvlc_args.split(), stdout=stdout, stderr=stderr)
 
     else:  # noise fx file
-        # Play once from a random start time, then loop the whole file from the beginning
         # TODO: way to long to get file duration
-        #   - run analysis once, and store in a csv file ?
-        #   - with enough files, that wouln't be a problem
-        logging.info("getting file duration...")
-        noise_duration = librosa.get_duration(path=url)
-        logging.info(f"duration is {noise_duration:.1f} seconds")
-        start_time = np.random.uniform(0, noise_duration)
+        cmd = f"cvlc --aout {audio} --random ./radio-fx/radio-fx.m3u"
+        radio = subprocess.Popen(cmd.split(), stdout=stdout, stderr=stderr)
 
-        # First, play from random_start to the end
-        command = cvlc_args + ["--play-and-exit", "--start-time", str(start_time), url]
-        subprocess.run(command, check=True)
-
-        # Then, loop the whole file
-        radio = subprocess.Popen(
-            cvlc_args + ["--loop", url], stdout=stdout, stderr=stderr
-        )
+    # sleep for a while to make sure that launch() won't be called
+    # twice in a row by mistake
+    time.sleep(0.5)
 
     return radio.pid
 

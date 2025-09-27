@@ -207,9 +207,9 @@ while True:
         else:
             coordinates = encoders_thread.get_readings()
             search_area = Look_Around(coordinates[0], coordinates[1], fuzziness=3)
-            logging.info(
-                f"found {len(search_area)} refs in search area around {coordinates}"
-            )
+            # logging.info(
+            #     f"found {len(search_area)} refs in search area around {coordinates}"
+            # )
             location_name = ""
             stations_list = []
             url_list = []
@@ -263,8 +263,11 @@ while True:
             streamer.play()
 
             # stop tuning noise
+            logging.info("waiting before killing noise")
             time.sleep(2)  # let the radio stream start properly
+            logging.info("killing noise")
             streamer_fx.stop()  # stop after starting the real stream !
+            logging.info("noise killed")
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
