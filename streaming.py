@@ -52,9 +52,25 @@ def check_url(url) -> str:
 def launch(audio, url) -> 'pid':
     """Play url returning the vlc pid"""
     logging.debug("Launching audio: %s, %s", audio, url)
-    # note that cvlc output is hidden, but one way want to look at it for debug 
-    # purposes, in such a case remove the stdout and stderr options 
-    radio = subprocess.Popen(['cvlc', '--aout', audio, url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    # note that cvlc output is hidden, but one way want to look at it for debug
+    # purposes, in such a case remove the stdout and stderr options
+    stdout = subprocess.DEVNULL
+    stderr = subprocess.STDOUT
+
+    cvlc_args = f"cvlc --aout {audio} {url}"
+    if ".wav" not in url:  # radio stream
+        radio = subprocess.Popen(cvlc_args.split(), stdout=stdout, stderr=stderr)
+
+    else:  # noise fx file
+        # TODO: way to long to get file duration
+        cmd = f"cvlc --aout {audio} --random ./radio-fx/radio-fx.m3u"
+        radio = subprocess.Popen(cmd.split(), stdout=stdout, stderr=stderr)
+
+    # sleep for a while to make sure that launch() won't be called
+    # twice in a row by mistake
+    time.sleep(0.5)
+
     return radio.pid
 
 
