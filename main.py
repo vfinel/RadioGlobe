@@ -150,25 +150,15 @@ def Process_UI_Events():
 
 
 def update_display():
-    # Add arrows to the display if there is more than one station here
-    if len(stations_list) > 1:
-        display_thread.update(
-            latitude,
-            longitude,
-            location_name,
-            volume_disp,
-            stations_list[jog],
-            True,
-        )
-    elif len(stations_list) == 1:
-        display_thread.update(
-            latitude,
-            longitude,
-            location_name,
-            volume_disp,
-            stations_list[jog],
-            False,
-        )
+    show_arrows = len(stations_list) > 1
+    display_thread.update(
+        latitude,
+        longitude,
+        location_name,
+        volume_disp,
+        stations_list[jog],
+        show_arrows,
+    )
 
 
 # PROGRAM START
