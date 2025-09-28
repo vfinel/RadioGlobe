@@ -24,6 +24,7 @@ volume = 95
 jog = 0
 last_jog = 0
 state_entry = True
+volume_disp = 0
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
@@ -161,6 +162,50 @@ def update_display():
     )
 
 
+def search_and_play():
+    global state
+    global state_entry
+
+    coordinates = encoders_thread.get_readings()
+    search_area = Look_Around(coordinates[0], coordinates[1], fuzziness=3)
+    location_name = ""
+    stations_list = []
+    url_list = []
+    location = ""
+
+    # Check the search area. Saving the first location name encountered
+    # and all radio stations in the area, in order encountered
+    for ref in search_area:
+        index = database.index_map[ref[0]][ref[1]]
+        if index != 0xFFFF:  # something is in this ref
+            encoders_thread.latch(coordinates[0], coordinates[1], stickiness=8)
+            state = "playing"
+            state_entry = True
+            location = database.Get_Location_By_Index(index)
+            logging.debug(f"search area {ref}, found location: {location}")
+            if location_name == "":
+                location_name = location
+                logging.info(f"latched in {location_name} {coordinates}")
+
+            for station in database.stations_data[location]["urls"]:
+                stations_list.append(station["name"])
+                url_list.append(station["url"])
+
+    # Provide 'helper' coordinates
+    latitude = round((360 * coordinates[0] / ENCODER_RESOLUTION - 180), 2)
+    longitude = round((360 * coordinates[1] / ENCODER_RESOLUTION - 180), 2)
+
+    # update display
+    if volume_display:
+        volume_disp = volume
+    else:
+        volume_disp = 0
+
+    display_thread.update(latitude, longitude, "Tuning...", volume_disp, "", False)
+
+    return location, location_name, stations_list, url_list
+
+
 # PROGRAM START
 database.Load_Map()
 encoder_offsets = database.Load_Calibration()
@@ -192,8 +237,8 @@ while True:
         logging.info(f"entering {state = }")
 
     if state == "start":
-        # Entry - setup state
         if state_entry:
+            # Entry - setup state
             state_entry = False
             display_thread.message(
                 line_1="Radio Globe",
@@ -210,52 +255,21 @@ while True:
             rgb_led.set_blink("WHITE")
             display_thread.clear()
 
-            # play tuning noise
-            fx_file = random.choice(fx_files)
-            streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
-            streamer_fx.play()
+            location, location_name, stations_list, url_list = search_and_play()
+            if location_name == "":  # no local radio found
+                logging.info("no local radio found")
+                # play tuning noise
+                fx_file = random.choice(fx_files)
+                streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
+                streamer_fx.play()
+
+            else:  # radio found and playing
+                logging.info(f"location found: {location_name}")
+                streamer_fx = None
 
         # Normal operation
         else:
-            coordinates = encoders_thread.get_readings()
-            search_area = Look_Around(coordinates[0], coordinates[1], fuzziness=3)
-            # logging.info(
-            #     f"found {len(search_area)} refs in search area around {coordinates}"
-            # )
-            location_name = ""
-            stations_list = []
-            url_list = []
-
-            # Check the search area.  Saving the first location name encountered
-            # and all radio stations in the area, in order encountered
-            for ref in search_area:
-                index = database.index_map[ref[0]][ref[1]]
-
-                if index != 0xFFFF:
-                    encoders_thread.latch(coordinates[0], coordinates[1], stickiness=8)
-                    state = "playing"
-                    state_entry = True
-                    location = database.Get_Location_By_Index(index)
-                    # logging.info(f"latched in {len(location)} locations")
-                    if location_name == "":
-                        location_name = location
-
-                    for station in database.stations_data[location]["urls"]:
-                        stations_list.append(station["name"])
-                        url_list.append(station["url"])
-
-            # Provide 'helper' coordinates
-            latitude = round((360 * coordinates[0] / ENCODER_RESOLUTION - 180), 2)
-            longitude = round((360 * coordinates[1] / ENCODER_RESOLUTION - 180), 2)
-
-            if volume_display:
-                volume_disp = volume
-            else:
-                volume_disp = 0
-
-            display_thread.update(
-                latitude, longitude, "Tuning...", volume_disp, "", False
-            )
+            location, location_name, stations_list, url_list = search_and_play()
 
     elif state == "playing":
         # Entry - setup
@@ -278,16 +292,17 @@ while True:
             streamer = Streamer(AUDIO_SERVICE, url_list[jog])
             streamer.play()
 
-            # stop tuning noise
-            logging.info("waiting before killing noise")
-            time.sleep(2)  # let the radio stream start properly
-            logging.info("killing noise")
-            streamer_fx.stop()  # stop after starting the real stream !
-            logging.info("noise killed")
+            # stop tuning noise TODO: use scheduler.attach_timer ?
+            if streamer_fx is not None:
+                logging.info("waiting before killing noise")
+                time.sleep(2)  # let the radio stream start properly
+                logging.info("killing noise")
+                streamer_fx.stop()  # stop after starting the real stream !
+                logging.info("noise killed")
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
-            logging.info("encoders not latched")
+            logging.info(f"encoders not latched {encoders_thread.get_readings()}")
             streamer.stop()
             state = "tuning"
             state_entry = True
