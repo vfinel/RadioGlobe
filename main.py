@@ -270,8 +270,11 @@ while True:
             latitude = database.stations_data[location]["coords"]["n"]
             longitude = database.stations_data[location]["coords"]["e"]
 
+            # update display (otherwie the sleep() is messing things up)
+            display_thread.clear()
+            update_display()
+
             # Play the top station
-            update_display()  # update display here (otherwie the sleep() is messing things up)
             streamer = Streamer(AUDIO_SERVICE, url_list[jog])
             streamer.play()
 
