@@ -84,7 +84,7 @@ class Streamer:
     """A streaming audio player using vlc's command line"""
 
     def __init__(self, audio, url):
-        logging.info("Starting Streamer: %s, %s", audio, url)
+        logging.info(f"Starting Streamer: {audio}, {url[:40]} [...]")
         self.audio = audio
         self.url = url
         self.radio_pid = None
