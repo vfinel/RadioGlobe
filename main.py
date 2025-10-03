@@ -14,6 +14,7 @@ from rgb_led import RGB_LED
 from scheduler import Scheduler
 import os
 import random
+import vlc
 
 AUDIO_SERVICE = "pulse"
 VOLUME_INCREMENT = 5
@@ -206,6 +207,50 @@ def search_and_play():
     return location, location_name, stations_list, url_list
 
 
+def create_noise_player():
+    """see https://www.geeksforgeeks.org/python/python-vlc-medialistplayer-pause-resume/"""
+    # creating a media player object
+    media_player = vlc.MediaListPlayer()
+
+    # creating Instance class object
+    player = vlc.Instance()
+
+    # creating a new media list object
+    media_list = player.media_list_new()
+
+    # creating a new media
+    media = player.media_new("radio-fx/radio-fx.m3u")
+
+    # adding media to media list
+    media_list.add_media(media)
+
+    # setting media list to the media player
+    media_player.set_media_list(media_list)
+
+    return media_player
+
+
+def kill_noise(delay=0):
+    global streamer_fx
+    if streamer_fx is not None:
+        print(f"{streamer_fx=}")
+        logging.info("waiting before killing noise")
+        time.sleep(delay)  # let the radio stream start properly
+        logging.info("killing noise")
+        streamer_fx.stop()  # stop after starting the real stream !
+        logging.info("noise killed")
+
+
+def pause_noise():
+    global noise_player
+    logging.info("pausing noise")
+    noise_player.set_pause(1)  # pause
+
+
+def kill_noise_with_scheduler():
+    kill_noise(delay=0)
+
+
 # PROGRAM START
 database.Load_Map()
 encoder_offsets = database.Load_Calibration()
@@ -229,7 +274,7 @@ set_volume(volume)
 
 fx_folder = "radio-fx"
 fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
-
+noise_player = create_noise_player()
 
 while True:
     if state_entry:
@@ -246,7 +291,8 @@ while True:
                 line_3="by Jude Pullen and",
                 line_4="Donald Robson, 2020",
             )
-            scheduler.attach_timer(Back_To_Tuning, 3)
+            scheduler.attach_timer(Back_To_Tuning, 1)
+            noise_player.play()
 
     elif state == "tuning":
         # Entry - setup state
@@ -259,9 +305,11 @@ while True:
             if location_name == "":  # no local radio found
                 logging.info("no local radio found")
                 # play tuning noise
-                fx_file = random.choice(fx_files)
-                streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
-                streamer_fx.play()
+                # fx_file = random.choice(fx_files)
+                # streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
+                # streamer_fx.play()
+                logging.info("playing noise")
+                noise_player.set_pause(0)  # resume play
 
             else:  # radio found and playing
                 logging.info(f"location found: {location_name}")
@@ -293,17 +341,15 @@ while True:
             streamer.play()
 
             # stop tuning noise TODO: use scheduler.attach_timer ?
-            if streamer_fx is not None:
-                logging.info("waiting before killing noise")
-                time.sleep(2)  # let the radio stream start properly
-                logging.info("killing noise")
-                streamer_fx.stop()  # stop after starting the real stream !
-                logging.info("noise killed")
+            scheduler.attach_timer(pause_noise, 2)
+            # if streamer_fx is not None:
+            #     # kill_noise(delay=2)
+            #     # scheduler.attach_timer(kill_noise, 2)
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
             logging.info(f"encoders not latched {encoders_thread.get_readings()}")
-            streamer.stop()
+            streamer.stop()  # i could delay that a bit so that noise fx has time to start playing
             state = "tuning"
             state_entry = True
 
