@@ -8,7 +8,7 @@ import logging
 from streaming import Streamer, set_volume
 import database
 from display import Display
-from positional_encoders import *
+from positional_encoders import Positional_Encoders, ENCODER_RESOLUTION
 from ui_manager import UI_Manager
 from rgb_led import RGB_LED
 from scheduler import Scheduler
