@@ -352,6 +352,7 @@ while True:
                 line_3="before disconnecting",
                 line_4="power.",
             )
+            time.sleep(0.1)  # make sure message is displayed completely before shutdown
             subprocess.run(["sudo", "poweroff"])
 
     else:
