@@ -230,25 +230,10 @@ def create_noise_player():
     return media_player
 
 
-def kill_noise(delay=0):
-    global streamer_fx
-    if streamer_fx is not None:
-        print(f"{streamer_fx=}")
-        logging.info("waiting before killing noise")
-        time.sleep(delay)  # let the radio stream start properly
-        logging.info("killing noise")
-        streamer_fx.stop()  # stop after starting the real stream !
-        logging.info("noise killed")
-
-
 def pause_noise():
     global noise_player
     logging.info("pausing noise")
     noise_player.set_pause(1)  # pause
-
-
-def kill_noise_with_scheduler():
-    kill_noise(delay=0)
 
 
 # PROGRAM START
@@ -300,20 +285,14 @@ while True:
             state_entry = False
             rgb_led.set_blink("WHITE")
             display_thread.clear()
-
+            logging.info("playing noise")
+            noise_player.set_pause(0)  # resume noise
             location, location_name, stations_list, url_list = search_and_play()
             if location_name == "":  # no local radio found
                 logging.info("no local radio found")
-                # play tuning noise
-                # fx_file = random.choice(fx_files)
-                # streamer_fx = Streamer(AUDIO_SERVICE, os.path.join(fx_folder, fx_file))
-                # streamer_fx.play()
-                logging.info("playing noise")
-                noise_player.set_pause(0)  # resume play
 
             else:  # radio found and playing
                 logging.info(f"location found: {location_name}")
-                streamer_fx = None
 
         # Normal operation
         else:
@@ -339,12 +318,8 @@ while True:
             # Play the top station
             streamer = Streamer(AUDIO_SERVICE, url_list[jog])
             streamer.play()
-
-            # stop tuning noise TODO: use scheduler.attach_timer ?
+            # TODO: use vlc module and use get_state to pause noise only if radio is actually playing ?
             scheduler.attach_timer(pause_noise, 2)
-            # if streamer_fx is not None:
-            #     # kill_noise(delay=2)
-            #     # scheduler.attach_timer(kill_noise, 2)
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
