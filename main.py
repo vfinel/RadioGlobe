@@ -255,19 +255,14 @@ def play_radio(url):
 
 def play_station_and_stop_noise(url):  # url_list[jog]
     """Play the top station and pause noise"""
-    # global streamer
-    # streamer = Streamer(AUDIO_SERVICE, url_list[jog])
-    # streamer.play()
     global radio_player
     radio_player = play_radio(url)
-
     scheduler.attach_timer(pause_noise, 2)
     return radio_player
 
 
 def print_radio_state():
     global radio_player
-    # print("coucou")
     try:
         msg = f"{radio_player.get_state() = }"
         print(msg)
@@ -351,7 +346,6 @@ while True:
             jog = 0
             last_jog = 0
             rgb_led.set_static("RED", timeout_sec=3.0)
-            streamer = None
 
             # Get display coordinates - from file, so there's no jumping about
             latitude = database.stations_data[location]["coords"]["n"]
@@ -366,7 +360,6 @@ while True:
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
             logging.info(f"encoders not latched {encoders_thread.get_readings()}")
-            # streamer.stop()  # i could delay that a bit so that noise fx has time to start playing
             radio_player.set_pause(1)
             state = "tuning"
             state_entry = True
@@ -377,16 +370,9 @@ while True:
             jog %= len(stations_list)
             last_jog = jog
 
-            # streamer.stop()
             logging.info("pausing radio and resuming noise")
             radio_player.set_pause(1)
-            noise_player.set_pause(0)  # resume noise
-
-            # # streamer = Streamer(AUDIO_SERVICE, url_list[jog])
-            # # streamer.play()
-            # radio_player = play_radio(url_list[jog])
-            # scheduler.attach_timer(pause_noise, 2)
-
+            noise_player.set_pause(0)
             radio_player = play_station_and_stop_noise(url_list[jog])
 
         # Idle operation - just keep display updated
