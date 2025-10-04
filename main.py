@@ -232,8 +232,53 @@ def create_noise_player():
 
 def pause_noise():
     global noise_player
+    global radio_player
+    # while radio_player.get_state() is not vlc.State.Playing:
+    #     time.sleep(0.2)
+
     logging.info("pausing noise")
     noise_player.set_pause(1)  # pause
+
+
+def play_radio(url):
+    media_player = vlc.MediaListPlayer()
+    player = vlc.Instance()
+    media_list = player.media_list_new()
+    media = player.media_new(url)
+    media_list.add_media(media)
+    media_player.set_media_list(media_list)
+    media_player.play()
+    # time.sleep(0.1)
+
+    return media_player
+
+
+def play_station_and_stop_noise(url):  # url_list[jog]
+    """Play the top station and pause noise"""
+    # global streamer
+    # streamer = Streamer(AUDIO_SERVICE, url_list[jog])
+    # streamer.play()
+    global radio_player
+    radio_player = play_radio(url)
+
+    scheduler.attach_timer(pause_noise, 2)
+    return radio_player
+
+
+def print_radio_state():
+    global radio_player
+    # print("coucou")
+    try:
+        msg = f"{radio_player.get_state() = }"
+        print(msg)
+        # logging.info(msg)
+
+    except:
+        print("oups")
+
+
+def start_streaming_radio_state():
+    scheduler.attach_timer(print_radio_state, 2, one_shot=False)
 
 
 # PROGRAM START
@@ -260,6 +305,7 @@ set_volume(volume)
 fx_folder = "radio-fx"
 fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
 noise_player = create_noise_player()
+scheduler.attach_timer(start_streaming_radio_state, 5, one_shot=True)
 
 while True:
     if state_entry:
@@ -315,16 +361,13 @@ while True:
             display_thread.clear()
             update_display()
 
-            # Play the top station
-            streamer = Streamer(AUDIO_SERVICE, url_list[jog])
-            streamer.play()
-            # TODO: use vlc module and use get_state to pause noise only if radio is actually playing ?
-            scheduler.attach_timer(pause_noise, 2)
+            radio_player = play_station_and_stop_noise(url_list[jog])
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
             logging.info(f"encoders not latched {encoders_thread.get_readings()}")
-            streamer.stop()  # i could delay that a bit so that noise fx has time to start playing
+            # streamer.stop()  # i could delay that a bit so that noise fx has time to start playing
+            radio_player.set_pause(1)
             state = "tuning"
             state_entry = True
 
@@ -334,9 +377,17 @@ while True:
             jog %= len(stations_list)
             last_jog = jog
 
-            streamer.stop()
-            streamer = Streamer(AUDIO_SERVICE, url_list[jog])
-            streamer.play()
+            # streamer.stop()
+            logging.info("pausing radio and resuming noise")
+            radio_player.set_pause(1)
+            noise_player.set_pause(0)  # resume noise
+
+            # # streamer = Streamer(AUDIO_SERVICE, url_list[jog])
+            # # streamer.play()
+            # radio_player = play_radio(url_list[jog])
+            # scheduler.attach_timer(pause_noise, 2)
+
+            radio_player = play_station_and_stop_noise(url_list[jog])
 
         # Idle operation - just keep display updated
         else:
