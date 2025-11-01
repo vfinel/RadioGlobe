@@ -252,7 +252,7 @@ def pause_noise():
     # while radio_player.get_state() is not vlc.State.Playing:
     #     time.sleep(0.2)
 
-    logging.info("pausing noise")
+    logging.info("radio playing, pausing noise")
     noise_player.set_pause(1)  # pause
 
 
@@ -281,11 +281,11 @@ def print_radio_state():
     global radio_player
     try:
         msg = f"{radio_player.get_state() = }"
-        print(msg)
-        # logging.info(msg)
+        if radio_player.get_state() != vlc.State.Playing:
+            logging.info(msg)
 
     except:
-        print("oups")
+        logging.info("unable to get radio state")
 
 
 def start_streaming_radio_state():
