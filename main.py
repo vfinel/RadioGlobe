@@ -4,6 +4,8 @@ import time
 import threading
 import subprocess
 import logging
+from logging.handlers import RotatingFileHandler
+import traceback
 
 from streaming import Streamer, set_volume
 import database
@@ -28,7 +30,13 @@ last_jog = 0
 state_entry = True
 volume_disp = 0
 
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+file_logger = RotatingFileHandler("radioglobe.log", maxBytes=5e6, backupCount=1)
+logging.basicConfig(
+    format="%(asctime)s - %(message)s",
+    level=logging.INFO,
+    handlers=[logging.StreamHandler(), file_logger],
+)
+
 
 ui_manager = UI_Manager()
 
