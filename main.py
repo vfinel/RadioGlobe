@@ -249,8 +249,8 @@ def create_noise_player():
 def pause_noise():
     global noise_player
     global radio_player
-    # while radio_player.get_state() is not vlc.State.Playing:
-    #     time.sleep(0.2)
+    while radio_player.get_state() != vlc.State.Playing:
+        time.sleep(0.2)
 
     logging.info("radio playing, pausing noise")
     noise_player.set_pause(1)  # pause
