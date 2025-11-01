@@ -293,6 +293,7 @@ def start_streaming_radio_state():
 
 
 # PROGRAM START
+play_radio("radio-fx/oxp.wav")
 database.Load_Map()
 encoder_offsets = database.Load_Calibration()
 
