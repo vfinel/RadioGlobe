@@ -66,7 +66,7 @@ class Positional_Encoders (threading.Thread):
     readings = []
 
     # Two devices (chip select pins)
-    for device in [0, 1]:
+    for device in [0, 1]:       # select encoder(s) to read
       self.spi.open(BUS, device)# Set SPI speed and mode
       self.spi.max_speed_hz = 5000
       self.spi.mode = 1
