@@ -184,7 +184,7 @@ def search_and_play():
     global state_entry
 
     coordinates = encoders_thread.get_readings()
-    search_area = Look_Around(coordinates[0], coordinates[1], fuzziness=3)
+    search_area = Look_Around(coordinates[0], coordinates[1], fuzziness=6)
     location_name = ""
     stations_list = []
     url_list = []
@@ -195,7 +195,7 @@ def search_and_play():
     for ref in search_area:
         index = database.index_map[ref[0]][ref[1]]
         if index != 0xFFFF:  # something is in this ref
-            encoders_thread.latch(coordinates[0], coordinates[1], stickiness=8)
+            encoders_thread.latch(coordinates[0], coordinates[1], stickiness=4)
             state = "playing"
             state_entry = True
             location = database.Get_Location_By_Index(index)
