@@ -162,12 +162,19 @@ def Process_UI_Events():
 
 def update_display():
     show_arrows = len(stations_list) > 1
+
+    # avoid errors in station names
+    if isinstance(stations_list[jog], str):
+        station_name = stations_list[jog]
+    else:
+        station_name = "unknown radio name"
+
     display_thread.update(
         latitude,
         longitude,
         location_name,
         volume_disp,
-        stations_list[jog],
+        station_name,
         show_arrows,
     )
 
