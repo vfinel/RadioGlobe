@@ -346,7 +346,7 @@ while True:
             logging.info("playing noise")
             noise_player.set_pause(0)  # resume noise
             location, location_name, stations_list, url_list = search_and_play()
-            if location_name == "":  # no local radio found
+            if location_name == "":
                 logging.info("no local radio found")
 
             else:  # radio found and playing
