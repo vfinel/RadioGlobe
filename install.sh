@@ -5,6 +5,7 @@ pip3 install https://github.com/pl31/python-liquidcrystal_i2c/archive/master.zip
 pip3 install python-vlc
 pip3 install spidev
 pip install librosa 
+
 # Set paths according to username
 sed -i "s/USER/${USER}/g" services/*.service
 sudo cp services/*.service /etc/systemd/system

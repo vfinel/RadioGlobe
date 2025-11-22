@@ -59,7 +59,7 @@ def launch(audio, url) -> "pid":
 
     logging.debug("Launching audio: %s, %s", audio, url)
 
-    # note that cvlc output is hidden, but one way want to look at it for debug
+    # note that cvlc output is hidden, but one may want to look at it for debug
     # purposes, in such a case remove the stdout and stderr options
     stdout = subprocess.DEVNULL
     stderr = subprocess.STDOUT
@@ -69,7 +69,6 @@ def launch(audio, url) -> "pid":
         radio = subprocess.Popen(cvlc_args.split(), stdout=stdout, stderr=stderr)
 
     else:  # noise fx file
-        # TODO: way to long to get file duration
         cmd = f"cvlc --aout {audio} --random ./radio-fx/radio-fx.m3u"
         radio = subprocess.Popen(cmd.split(), stdout=stdout, stderr=stderr)
 
