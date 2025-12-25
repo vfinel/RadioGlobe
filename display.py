@@ -153,19 +153,16 @@ if __name__ == "__main__":
   args = parse_args()
   print(args)
   args_lines = [args.line0, args.line1, args.line2, args.line3]
-  if args.test0:
-    test0()
-
-  elif args.test1:
-    test1()
-
-  elif len(''.join(args_lines)):
-    display_str(args_lines)
-
-  # try:
-  #   # test1()
-  #   # args = parse_args()
-  #   # display_str(args.l1, args.l2, args.l3, args.l4)
   
-  # except:
-  #   exit()
+  try:
+    if args.test0:
+      test0()
+
+    elif args.test1:
+      test1()
+
+    elif len(''.join(args_lines)):
+      display_str(args_lines)
+
+  except:
+    exit()
