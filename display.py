@@ -105,6 +105,21 @@ def parse_args():
   parser = argparse.ArgumentParser(
       description="write something on the LCD screen"
   )
+
+  parser.add_argument(
+    "-t0",
+    "--test0",
+    action=argparse.BooleanOptionalAction,
+    help="run test 0",
+)
+
+  parser.add_argument(
+    "-t1",
+    "--test1",
+    action=argparse.BooleanOptionalAction,
+    help="run test 1",
+)
+
   for line in range(4):
     parser.add_argument(
         f"-l{line}",
@@ -137,7 +152,15 @@ def display_str(text: list):
 if __name__ == "__main__":
   args = parse_args()
   print(args)
-  display_str([args.line0, args.line1, args.line2, args.line3])
+  args_lines = [args.line0, args.line1, args.line2, args.line3]
+  if args.test0:
+    test0()
+
+  elif args.test1:
+    test1()
+
+  elif len(''.join(args_lines)):
+    display_str(args_lines)
 
   # try:
   #   # test1()
