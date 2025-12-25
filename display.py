@@ -1,6 +1,8 @@
 #! /usr/bin/python3
+import argparse
 import time
 import threading
+import sys
 import liquidcrystal_i2c
 
 DISPLAY_I2C_ADDRESS = 0x27
@@ -79,15 +81,68 @@ class Display (threading.Thread):
 
     self.changed = True
 
-if __name__ == "__main__":
+def test0():
+  display_thread = Display(1, "Display")
+  display_thread.start()
+  display_thread.update(51.45, -2.59, "Bristol, United Kingdom", 45, "BBC Radio Bristol", True)
+  time.sleep(5)
+  display_thread.update(0, 0, "Clearing in 2s...", 0, "", False)
+  time.sleep(2)
+  display_thread.clear()
+
+
+def test1():
+  display_thread = Display(1, "Display")
+  display_thread.start()
+  display_thread.message(line_1="", 
+                         line_2="", 
+                         line_3="hello !", 
+                         line_4="",
+                         )
+
+
+def parse_args():
+  parser = argparse.ArgumentParser(
+      description="write something on the LCD screen"
+  )
+  for line in range(4):
+    parser.add_argument(
+        f"-l{line}",
+        f"--line{line}",
+        required=False,
+        type=str,
+        default="",
+        help=f"line {line} to display",
+    )
+
   try:
-    display_thread = Display(1, "Display")
-    display_thread.start()
-    display_thread.update(51.45, -2.59, "Bristol, United Kingdom", 45, "BBC Radio Bristol", True)
-    time.sleep(5)
-    display_thread.update(0, 0, "Clearing in 2s...", 0, "", False)
-    time.sleep(2)
-    display_thread.clear()
+      args = parser.parse_args()
+
+  except Exception:
+      parser.print_help()
+      sys.exit(0)
+
+  return args
+
+
+def display_str(text: list):
+  display_thread = Display(1, "Display")
+  display_thread.start()
+  display_thread.message(line_1=text[0], 
+                         line_2=text[1], 
+                         line_3=text[2], 
+                         line_4=text[3],
+                         )  
+
+if __name__ == "__main__":
+  args = parse_args()
+  print(args)
+  display_str([args.line0, args.line1, args.line2, args.line3])
+
+  # try:
+  #   # test1()
+  #   # args = parse_args()
+  #   # display_str(args.l1, args.l2, args.l3, args.l4)
   
-  except:
-    exit()
+  # except:
+  #   exit()
