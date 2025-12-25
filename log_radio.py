@@ -9,13 +9,18 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
     """ log current radio to the station log file """
     now = datetime.datetime.now()
     with open(filename, 'a', encoding=encoding) as f:
-        f.write(f"{location}, {latitude}, {longitude}, {station}, {now}, {url} \n")
+        f.write(f"{station}, {location}, {latitude}, {longitude}, {now}, {url} \n")
 
 
 def log_radio_test(location: str, latitude: str, longitude: str, station: str, url: str):
     """ write something in the file, then read back and display content """
 
-    log_radio(location, latitude, longitude, station, url)
+    log_radio(location=location, 
+            latitude=latitude, 
+            longitude=longitude,
+            station=station, 
+            url=url,
+            )
     
     with open(filename, encoding=encoding) as f:
         data = f.read()
