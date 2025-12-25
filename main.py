@@ -10,6 +10,7 @@ import traceback
 from streaming import Streamer, set_volume
 import database
 from display import Display
+from log_radio import log_radio
 from positional_encoders import Positional_Encoders, ENCODER_RESOLUTION
 from ui_manager import UI_Manager
 from rgb_led import RGB_LED
@@ -274,6 +275,14 @@ def play_station_and_stop_noise(url):  # url_list[jog]
     global radio_player
     radio_player = play_radio(url)
     scheduler.attach_timer(pause_noise, 2)
+
+    log_radio(location=location_name, 
+            latitude=latitude, 
+            longitude=longitude,
+            station=stations_list[jog], 
+            url=url_list[jog],
+            )
+    
     return radio_player
 
 
@@ -372,7 +381,7 @@ while True:
             display_thread.clear()
             update_display()
 
-            radio_player = play_station_and_stop_noise(url_list[jog])
+            radio_player = play_station_and_stop_noise(url_list[jog])            
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
