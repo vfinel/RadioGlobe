@@ -1,3 +1,4 @@
+from difflib import get_close_matches
 import json
 import pandas as pd
 import traceback
@@ -61,12 +62,23 @@ def find_radio_in_database(radio: dict, database: pd.DataFrame):
     match = database[(database['name'].str.lower() == query_name) & (database['name'].str.lower() == query_name)]
     if match.empty:
         print(f"\tunable to find radio")
+        find_closest_matches(radio, database)
 
     else: 
         print('\tradio found !')
 
     return match
 
+
+def find_closest_matches(radio: dict, database: pd.DataFrame):
+    # TODO: loop / search only if name/location is not found as is 
+    # clean names (because some contains floats)
+    database_names = [str(name) for name in database['name']]
+    close_names = set(get_close_matches(radio['name'], database_names))
+    close_locations = set(get_close_matches(radio['name'], database['location']))
+    print(f"\t{close_names=}")
+    print(f"\t{close_locations=}")
+    
 
 def main():
     # database_path = r"C:\Users\v.finel\Desktop\stations.json"
