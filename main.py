@@ -31,7 +31,7 @@ last_jog = 0
 state_entry = True
 volume_disp = 0
 
-file_logger = RotatingFileHandler("radioglobe.log", maxBytes=5e6, backupCount=1)
+file_logger = RotatingFileHandler("logs/radioglobe.log", maxBytes=5e6, backupCount=1)
 logging.basicConfig(
     format="%(asctime)s - %(message)s",
     level=logging.INFO,

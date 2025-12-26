@@ -1,7 +1,7 @@
 import argparse 
 import datetime 
 
-filename = "stations_log.csv"
+filename = "logs/stations_log.csv"
 encoding = "utf-8"
 
 
