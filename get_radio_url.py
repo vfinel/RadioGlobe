@@ -42,9 +42,9 @@ def fill_missing_url_from_file(csv_path: str, database: pd.DataFrame):
     print(f"\nradios to find: \n{radios_to_find.head()}")
 
     # find missing URLs 
-    for idx, row in radios_to_find.iterrows():
-        if pd.isna(row['url']) or not str(row['url']).strip():
-            match = find_radio_in_database(row, database)
+    for idx, radio in radios_to_find.iterrows():
+        if pd.isna(radio['url']) or not str(radio['url']).strip():
+            match = find_radio_in_database(radio, database)
             if not match.empty:
                 radios_to_find.at[idx, 'url'] = match.iloc[0]['url']
 
@@ -53,11 +53,11 @@ def fill_missing_url_from_file(csv_path: str, database: pd.DataFrame):
     print(f'\nupdated {csv_path}.')
 
 
-def find_radio_in_database(row: dict, database: pd.DataFrame):
+def find_radio_in_database(radio: dict, database: pd.DataFrame):
     """ (Try to) find a match in the stations DataFrame """
-    print(f"\nlooking for '{row['name']}' in '{row['location']}'")
-    query_loc = row['location'].lower().replace(' ', '')
-    query_name = row['name'].lower()
+    print(f"\nlooking for '{radio['name']}' in '{radio['location']}'")
+    query_loc = radio['location'].lower().replace(' ', '')
+    query_name = radio['name'].lower()
     match = database[(database['name'].str.lower() == query_name) & (database['name'].str.lower() == query_name)]
     if match.empty:
         print(f"\tunable to find radio")
