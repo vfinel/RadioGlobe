@@ -4,7 +4,7 @@ import time
 import threading
 import subprocess
 import traceback
-import logging 
+import logging
 
 from streaming import Streamer, set_volume
 import database
@@ -271,13 +271,14 @@ def play_station_and_stop_noise(url):  # url_list[jog]
     radio_player = play_radio(url)
     scheduler.attach_timer(pause_noise, 2)
 
-    log_radio(location=location_name, 
-            latitude=latitude, 
-            longitude=longitude,
-            station=stations_list[jog], 
-            url=url_list[jog],
-            )
-    
+    log_radio(
+        location=location_name,
+        latitude=latitude,
+        longitude=longitude,
+        station=stations_list[jog],
+        url=url_list[jog],
+    )
+
     return radio_player
 
 
@@ -376,7 +377,7 @@ while True:
             display_thread.clear()
             update_display()
 
-            radio_player = play_station_and_stop_noise(url_list[jog])            
+            radio_player = play_station_and_stop_noise(url_list[jog])
 
         # Exit back to tuning state if latch has 'come unstuck'
         elif not encoders_thread.is_latched():
