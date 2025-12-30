@@ -150,7 +150,14 @@ def get_menu():
             name="System",
             item_type="submenu",
             items=[
-                MenuItem(name="Shutdown globe", item_type="shutdown", current=True),
+                MenuItem(  # shutdown confirmation (cancel first) to avoid errors
+                    name="Shutdown globe",
+                    item_type="submenu",
+                    items=[
+                        MenuItem(name="cancel shutdown", item_type="exit"),
+                        MenuItem(name="confirm shutdown", item_type="shutdown"),
+                    ],
+                ),
                 MenuItem(name="Reboot globe", item_type="reboot", current=True),
                 MenuItem(name="Restart software", item_type="restart", current=True),
                 MenuItem(name="Back", item_type="back"),
