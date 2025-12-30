@@ -160,7 +160,9 @@ def Process_UI_Events():
 
     if root_menu is not None:
         # not an else, so that menu appears immediately after button press
-        root_menu.process_iteration(display_thread, ui_manager)
+        menu_result = root_menu.process_iteration(display_thread, ui_manager)
+        if menu_result == "exit":
+            root_menu = None
 
 
 def update_display():
