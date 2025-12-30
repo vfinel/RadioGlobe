@@ -1,4 +1,6 @@
+import subprocess
 import ui_manager
+
 
 class MenuItem:
     def __init__(
@@ -22,6 +24,7 @@ class Menu:
     def display(self, display_thread):
         """Displays the current menu on the screen."""
         lines = ["", "", "", ""]
+
         for i, item in enumerate(self.items):
             if i == self.current_index:
                 lines[i] = "> " + item.name
@@ -45,8 +48,10 @@ class Menu:
 
         if action == "up":
             self.current_index = (self.current_index - 1) % len(self.items)
+
         elif action == "down":
             self.current_index = (self.current_index + 1) % len(self.items)
+
         elif action == "select":
             if item.type == "value":
                 self.adjust_value()
@@ -60,6 +65,9 @@ class Menu:
                 return "exit"
             elif item.type == "shutdown":
                 ui_manager.shutdown(display_thread)
+                return "shutdown"
+            elif item.type == "reboot":
+                subprocess.call(["sh", "./reboot_globe.sh"])
                 return "shutdown"
 
         return "continue"
@@ -135,10 +143,8 @@ class Menu:
 def get_menu():
     # Create menu items
     menu_items = [
-        MenuItem(
-            name="Parameter 1", item_type="value", current=10, min_val=0, max_val=100
-        ),
         MenuItem(name="Shutdown globe", item_type="shutdown", current=True),
+        MenuItem(name="Reboot globe", item_type="reboot", current=True),
         MenuItem(
             name="Submenu",
             item_type="submenu",
