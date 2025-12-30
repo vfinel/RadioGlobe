@@ -7,6 +7,9 @@ pip3 install spidev
 pip install librosa 
 pip install pandas
 
+# autorize execution of utility scripts 
+sudo chmod +x poweroff_globe.sh  reboot_globe.sh  restart_main.sh 
+
 # Set paths according to username
 sed -i "s/USER/${USER}/g" services/*.service
 sudo cp services/*.service /etc/systemd/system
