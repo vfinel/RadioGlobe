@@ -83,7 +83,7 @@ def find_closest_matches(radio: dict, database: pd.DataFrame):
 def main():
     # database_path = r"C:\Users\v.finel\Desktop\stations.json"
     database_path = r"stations.json"
-    csv_path = 'get_radio_url.csv'
+    csv_path = 'logs/favourite_globe_radios.csv'
     database = load_database(database_path)
     fill_missing_url_from_file(csv_path, database)
     

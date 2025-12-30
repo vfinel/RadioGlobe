@@ -3,14 +3,14 @@ import re
 import time
 import threading
 import subprocess
-import logging
-from logging.handlers import RotatingFileHandler
 import traceback
+import logging 
 
 from streaming import Streamer, set_volume
 import database
 from display import Display
-from log_radio import log_radio
+from loggers.log_radio import log_radio
+from loggers.log_software import get_logger
 from positional_encoders import Positional_Encoders, ENCODER_RESOLUTION
 from ui_manager import UI_Manager
 from rgb_led import RGB_LED
@@ -31,12 +31,7 @@ last_jog = 0
 state_entry = True
 volume_disp = 0
 
-file_logger = RotatingFileHandler("radioglobe.log", maxBytes=5e6, backupCount=1)
-logging.basicConfig(
-    format="%(asctime)s - %(message)s",
-    level=logging.INFO,
-    handlers=[logging.StreamHandler(), file_logger],
-)
+file_logger = get_logger()
 
 
 ui_manager = UI_Manager()
