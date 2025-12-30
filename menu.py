@@ -1,5 +1,8 @@
+import os
+import time
 import subprocess
 import ui_manager
+from loggers.log_radio import make_listening_stats
 
 
 class MenuItem:
@@ -42,7 +45,7 @@ class Menu:
             line_4=lines[3],
         )
 
-    def handle_input(self, action, display_thread=None):
+    def handle_input(self, action, display_thread=None, station_info={}):
         """Handles user input and updates the menu state."""
         item = self.items[self.current_index]
 
@@ -71,7 +74,12 @@ class Menu:
             elif item.type == "restart":
                 subprocess.call(["sh", "./restart_main.sh"])
                 return "restart"
-
+            elif item.type == "add_station":
+                add_station_to_favorites(station_info, display_thread)
+                return "exit"
+            elif item.type == "show_stats":
+                show_stats(display_thread)
+                return "exit"
         else:
             return "continue"
 
@@ -115,13 +123,13 @@ class Menu:
     def get_current_item(self):
         return self.items[self.current_index]
 
-    def process_iteration(self, display_thread, ui_manager):
+    def process_iteration(self, display_thread, ui_manager, station_info: dict):
         self.display(display_thread)
         action = self.get_input(ui_manager)
         if action:
             display_thread.clear()
 
-        result = self.handle_input(action, display_thread)
+        result = self.handle_input(action, display_thread, station_info)
         return result
 
     def get_input(self, ui_manager):
@@ -147,7 +155,7 @@ def get_menu():
     # Create menu items
     menu_items = [
         MenuItem(
-            name="System",
+            name="system",
             item_type="submenu",
             items=[
                 MenuItem(  # shutdown confirmation (cancel first) to avoid errors
@@ -171,6 +179,10 @@ def get_menu():
                     name="add station to fav",
                     item_type="add_station",
                     current=True,
+                ),
+                MenuItem(
+                    name="show stats",
+                    item_type="show_stats",
                 ),
                 MenuItem(name="Back", item_type="back"),
             ],
@@ -204,3 +216,16 @@ def add_station_to_favorites(station, display_thread):
         line_3="to favorites",
     )
     time.sleep(1)
+
+
+def show_stats(display_thread):
+    n_total, n_listened, ratio = make_listening_stats()
+    display_thread.clear()
+    time.sleep(0.2)
+    display_thread.message(
+        line_1=f"listened: {n_listened}",
+        line_2=f"total: {n_total}",
+        line_3=f"> you listened {100 * ratio:.2f}%",
+        line_4="of the world radios!",
+    )
+    time.sleep(10)
