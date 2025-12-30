@@ -1,3 +1,5 @@
+import ui_manager
+
 class MenuItem:
     def __init__(
         self, name, item_type, current=None, min_val=None, max_val=None, items=None
@@ -37,7 +39,7 @@ class Menu:
             line_4=lines[3],
         )
 
-    def handle_input(self, action):
+    def handle_input(self, action, display_thread=None):
         """Handles user input and updates the menu state."""
         item = self.items[self.current_index]
 
@@ -56,6 +58,9 @@ class Menu:
                 self.go_back()
             elif item.type == "exit":
                 return "exit"
+            elif item.type == "shutdown":
+                ui_manager.shutdown(display_thread)
+                return "shutdown"
 
         return "continue"
 
@@ -105,7 +110,7 @@ class Menu:
         if action:
             display_thread.clear()
 
-        result = self.handle_input(action)
+        result = self.handle_input(action, display_thread)
         return result
 
     def get_input(self, ui_manager):
@@ -133,7 +138,7 @@ def get_menu():
         MenuItem(
             name="Parameter 1", item_type="value", current=10, min_val=0, max_val=100
         ),
-        MenuItem(name="Parameter 2", item_type="switch", current=True),
+        MenuItem(name="Shutdown globe", item_type="shutdown", current=True),
         MenuItem(
             name="Submenu",
             item_type="submenu",

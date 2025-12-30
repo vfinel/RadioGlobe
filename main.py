@@ -92,6 +92,7 @@ def Process_UI_Events():
     global encoders_thread
     global rgb_led
     global root_menu
+    global display_thread
 
     if root_menu is None:
         ui_events = []
