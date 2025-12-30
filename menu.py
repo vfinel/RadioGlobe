@@ -12,6 +12,7 @@ class MenuItem:
 
 class Menu:
     def __init__(self, items):
+        assert len(items) <= 4, "The Menu cannot have more than 4 items for now"
         self.items = items
         self.current_index = 0
         self.parent = None  # For keeping track of the parent menu
