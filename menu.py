@@ -68,7 +68,9 @@ class Menu:
                 return "shutdown"
             elif item.type == "reboot":
                 subprocess.call(["sh", "./reboot_globe.sh"])
-                return "reboot"
+            elif item.type == "restart":
+                subprocess.call(["sh", "./restart_main.sh"])
+                return "restart"
 
         else:
             return "continue"
@@ -150,6 +152,7 @@ def get_menu():
             items=[
                 MenuItem(name="Shutdown globe", item_type="shutdown", current=True),
                 MenuItem(name="Reboot globe", item_type="reboot", current=True),
+                MenuItem(name="Restart software", item_type="restart", current=True),
                 MenuItem(name="Back", item_type="back"),
             ],
         ),
