@@ -163,6 +163,18 @@ def get_menu():
                 MenuItem(name="Back", item_type="back"),
             ],
         ),
+        MenuItem(
+            name="radio stations",
+            item_type="submenu",
+            items=[
+                MenuItem(
+                    name="add station to fav",
+                    item_type="add_station",
+                    current=True,
+                ),
+                MenuItem(name="Back", item_type="back"),
+            ],
+        ),
         MenuItem(name="Exit", item_type="exit"),
     ]
 
@@ -170,3 +182,25 @@ def get_menu():
     root_menu = Menu(menu_items)
 
     return root_menu
+
+
+def add_station_to_favorites(station, display_thread):
+    favourite_radio_file = "logs/favourite_globe_radios.csv"
+    encoding = "utf-8"
+
+    # create file if it does not exist yet
+    if not os.path.isfile(favourite_radio_file):
+        with open(favourite_radio_file, "w", encoding=encoding) as f:
+            f.write("name,location,url,\n")
+
+    # append radio to file
+    with open(favourite_radio_file, "a", encoding=encoding) as f:
+        f.write(f"{station['name']},{station['location']},{station['url']},\n")
+
+    display_thread.clear()
+    time.sleep(0.2)
+    display_thread.message(
+        line_2="Station added",
+        line_3="to favorites",
+    )
+    time.sleep(1)

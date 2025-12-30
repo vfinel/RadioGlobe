@@ -93,6 +93,9 @@ def Process_UI_Events():
     global rgb_led
     global root_menu
     global display_thread
+    global stations_list
+    global location_name
+    global url_list
 
     if root_menu is None:
         ui_events = []
@@ -161,7 +164,16 @@ def Process_UI_Events():
 
     if root_menu is not None:
         # not an else, so that menu appears immediately after button press
-        menu_result = root_menu.process_iteration(display_thread, ui_manager)
+        station_info = {
+            "name": stations_list[jog],
+            "url": url_list[jog],
+            "location": location_name,
+        }
+        menu_result = root_menu.process_iteration(
+            display_thread,
+            ui_manager,
+            station_info,
+        )
         if menu_result == "exit":
             root_menu = None
 
