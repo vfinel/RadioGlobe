@@ -13,7 +13,7 @@ from display import Display
 from loggers.log_radio import log_radio
 from loggers.log_software import get_logger
 from positional_encoders import Positional_Encoders, ENCODER_RESOLUTION
-from ui_manager import UI_Manager
+from ui_manager import UI_Manager, shutdown
 from rgb_led import RGB_LED
 from scheduler import Scheduler
 import os
@@ -433,16 +433,7 @@ while True:
     elif state == "shutdown":
         if state_entry:
             state_entry = False
-            display_thread.clear()
-            time.sleep(0.1)
-            display_thread.message(
-                line_1="Shutting down...",
-                line_2="Please wait 10 sec",
-                line_3="before disconnecting",
-                line_4="power.",
-            )
-            time.sleep(0.1)  # make sure message is displayed completely before shutdown
-            subprocess.run(["sudo", "poweroff"])
+            shutdown(display_thread)
 
     else:
         # Just in case!
