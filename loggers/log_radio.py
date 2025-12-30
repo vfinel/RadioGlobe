@@ -28,7 +28,7 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
     
     index_in_stats = stats[(stats['name'] == station) & (stats['location']==location)].index
     if len(index_in_stats)==0:  # congrats, new station !
-        new_row = pd.DataFrame.from_dict({"name": station, "location": location,"latitude": latitude, "longitude":longitude,"date":now,"count":1,"url": url})
+        new_row = pd.DataFrame({"name": station, "location": location,"latitude": latitude, "longitude":longitude,"date":now,"count":1,"url": url}, index=[0])
         stats = pd.concat([stats, new_row], ignore_index=True)
 
     else:
