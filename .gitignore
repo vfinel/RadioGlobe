@@ -5,4 +5,4 @@ __pycache__
 *.wav
 *.log
 logs/stations_listened.csv
-
+logs/stations_log.csv

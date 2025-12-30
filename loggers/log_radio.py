@@ -13,6 +13,11 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
     """ log current radio to the station log file """
     now = datetime.datetime.now()
 
+    # create file if it does not exist yet
+    if not os.path.isfile(stations_log):
+        with open(stations_log, 'w', encoding=encoding) as f:
+            f.write("radio, location, latitude, longitude, date, url\n")
+
     # log radio to log file 
     with open(stations_log, 'a', encoding=encoding) as f:
         f.write(f"{station}, {location}, {latitude}, {longitude}, {now}, {url} \n")
