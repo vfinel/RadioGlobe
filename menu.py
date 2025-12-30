@@ -70,7 +70,8 @@ class Menu:
                 subprocess.call(["sh", "./reboot_globe.sh"])
                 return "shutdown"
 
-        return "continue"
+        else:
+            return "continue"
 
     def adjust_value(self):
         """Adjusts the value of the selected item."""
