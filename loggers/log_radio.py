@@ -18,7 +18,7 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
         f.write(f"{station}, {location}, {latitude}, {longitude}, {now}, {url} \n")
 
     # add statistics to stats file 
-    columns = ["name", "location", "latitude", "longitude", "date", "count", "url"]
+    columns = ["name", "location", "latitude", "longitude", "count", "url", "date"]
     try:
         stats = pd.read_csv(stations_listened, dtype={'date': str})
         stats.fillna({"date": ""}, inplace=True)
@@ -28,7 +28,7 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
     
     index_in_stats = stats[(stats['name'] == station) & (stats['location']==location)].index
     if len(index_in_stats)==0:  # congrats, new station !
-        new_row = pd.DataFrame({"name": station, "location": location,"latitude": latitude, "longitude":longitude,"date":now,"count":1,"url": url}, index=[0])
+        new_row = pd.DataFrame({"name": station, "location": location,"latitude": latitude, "longitude":longitude,"count":1,"url": url, "date":now}, index=[0])
         stats = pd.concat([stats, new_row], ignore_index=True)
 
     else:
