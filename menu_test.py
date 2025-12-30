@@ -3,25 +3,6 @@ from ui_manager import UI_Manager
 from menu import Menu, MenuItem
 
 
-def get_input(ui_manager):
-    """inspired by main.Process_UI_Events"""
-    action = ""
-    ui_events = []
-    ui_manager.update(ui_events)
-
-    for event in ui_events:
-        print(f"{event=}")
-        if event[0] == "Jog":
-            if event[1] == -1:
-                action = "up"
-            elif event[1] == 1:
-                action = "down"
-        elif event[0] == "Random":
-            action = "select"
-
-    return action
-
-
 def get_menu():
     # Create menu items
     menu_items = [
@@ -56,20 +37,19 @@ def test_menu():
     display_thread = Display(3, "Display")
     display_thread.start()
     ui_manager = UI_Manager()
-
     root_menu = get_menu()
 
     # Main loop
     while True:
-        root_menu.display(display_thread)
-        action = get_input(ui_manager)
-        if action:
-            display_thread.clear()
-
-        result = root_menu.handle_input(action)
-
+        result = root_menu.process_iteration(display_thread, ui_manager)
         if result == "exit":
+            display_thread.clear()
+            display_thread.message(
+                line_2="end of test menu, exiting loop",
+            )
             break
+
+    print("end of test, end of script.")
 
 
 if __name__ == "__main__":

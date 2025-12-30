@@ -4,7 +4,8 @@ import time
 import threading
 import subprocess
 import traceback
-import logging 
+import logging
+from menu import get_menu
 
 from streaming import Streamer, set_volume
 import database
@@ -30,9 +31,9 @@ jog = 0
 last_jog = 0
 state_entry = True
 volume_disp = 0
+root_menu = None
 
 file_logger = get_logger()
-
 
 ui_manager = UI_Manager()
 
@@ -90,70 +91,76 @@ def Process_UI_Events():
     global ui_manager
     global encoders_thread
     global rgb_led
+    global root_menu
 
-    ui_events = []
-    ui_manager.update(ui_events)
+    if root_menu is None:
+        ui_events = []
+        ui_manager.update(ui_events)
 
-    for event in ui_events:
-        if event[0] == "Jog":
-            if event[1] == 1:
-                # Next station
-                jog += 1
-            elif event[1] == -1:
-                # Previous station
-                jog -= 1
-            print(f"turning jog to position {jog}")
+        for event in ui_events:
+            if event[0] == "Jog":
+                if event[1] == 1:
+                    # Next station
+                    jog += 1
+                elif event[1] == -1:
+                    # Previous station
+                    jog -= 1
+                print(f"turning jog to position {jog}")
 
-        elif event[0] == "Volume":
-            if event[1] == 1:
-                volume += VOLUME_INCREMENT
-                volume = set_volume(volume)
-                volume_display = True
-                scheduler.attach_timer(Clear_Volume_Display, 3)
-                rgb_led.set_static(
-                    "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
-                )
-                print(("Volume up: {}%").format(volume))
-            elif event[1] == -1:
-                if state == "shutdown_confirm":
-                    Back_To_Tuning()
-                else:
-                    volume -= VOLUME_INCREMENT
+            elif event[0] == "Volume":
+                if event[1] == 1:
+                    volume += VOLUME_INCREMENT
                     volume = set_volume(volume)
                     volume_display = True
                     scheduler.attach_timer(Clear_Volume_Display, 3)
                     rgb_led.set_static(
                         "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
                     )
-                    print(("Volume down: {}%").format(volume))
+                    print(("Volume up: {}%").format(volume))
+                elif event[1] == -1:
+                    if state == "shutdown_confirm":
+                        Back_To_Tuning()
+                    else:
+                        volume -= VOLUME_INCREMENT
+                        volume = set_volume(volume)
+                        volume_display = True
+                        scheduler.attach_timer(Clear_Volume_Display, 3)
+                        rgb_led.set_static(
+                            "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
+                        )
+                        print(("Volume down: {}%").format(volume))
 
-        elif event[0] == "Random":
-            print("Toggle jog mode - not implemented")
+            elif event[0] == "enter_menu":
+                root_menu = get_menu()
 
-        elif event[0] == "Shutdown":
-            state = "shutdown_confirm"
-            state_entry = True
-
-        elif event[0] == "Calibrate":
-            # Zero the positional encoders
-            offsets = encoders_thread.zero()
-            database.Save_Calibration(offsets[0], offsets[1])
-            rgb_led.set_static(
-                "GREEN", timeout_sec=0.5, restore_previous_on_timeout=True
-            )
-            print("Calibrated")
-            display_thread.message(
-                line_1="", line_2="Calibrated!", line_3="", line_4=""
-            )
-
-            time.sleep(1)
-
-        elif event[0] == "Confirm":
-            if state == "shutdown_confirm":
-                state = "shutdown"
+            elif event[0] == "Shutdown":
+                state = "shutdown_confirm"
                 state_entry = True
-            else:
-                pass
+
+            elif event[0] == "Calibrate":
+                # Zero the positional encoders
+                offsets = encoders_thread.zero()
+                database.Save_Calibration(offsets[0], offsets[1])
+                rgb_led.set_static(
+                    "GREEN", timeout_sec=0.5, restore_previous_on_timeout=True
+                )
+                print("Calibrated")
+                display_thread.message(
+                    line_1="", line_2="Calibrated!", line_3="", line_4=""
+                )
+
+                time.sleep(1)
+
+            elif event[0] == "Confirm":
+                if state == "shutdown_confirm":
+                    state = "shutdown"
+                    state_entry = True
+                else:
+                    pass
+
+    if root_menu is not None:
+        # not an else, so that menu appears immediately after button press
+        root_menu.process_iteration(display_thread, ui_manager)
 
 
 def update_display():

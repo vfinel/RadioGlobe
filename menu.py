@@ -97,3 +97,60 @@ class Menu:
 
     def get_current_item(self):
         return self.items[self.current_index]
+
+    def process_iteration(self, display_thread, ui_manager):
+        self.display(display_thread)
+        action = self.get_input(ui_manager)
+        if action:
+            display_thread.clear()
+
+        result = self.handle_input(action)
+        return result
+
+    def get_input(self, ui_manager):
+        """inspired by main.Process_UI_Events"""
+        action = ""
+        ui_events = []
+        ui_manager.update(ui_events)
+
+        for event in ui_events:
+            if event[0] == "Jog":
+                if event[1] == -1:
+                    action = "up"
+                elif event[1] == 1:
+                    action = "down"
+            elif event[0] == "enter_menu":
+                action = "select"
+
+            print(f"{event=} -> {action=}")
+        return action
+
+
+def get_menu():
+    # Create menu items
+    menu_items = [
+        MenuItem(
+            name="Parameter 1", item_type="value", current=10, min_val=0, max_val=100
+        ),
+        MenuItem(name="Parameter 2", item_type="switch", current=True),
+        MenuItem(
+            name="Submenu",
+            item_type="submenu",
+            items=[
+                MenuItem(
+                    name="Sub-Parameter 1",
+                    item_type="value",
+                    current=5.5,
+                    min_val=0.0,
+                    max_val=10.0,
+                ),
+                MenuItem(name="Back", item_type="back"),
+            ],
+        ),
+        MenuItem(name="Exit", item_type="exit"),
+    ]
+
+    # Create the root menu
+    root_menu = Menu(menu_items)
+
+    return root_menu
