@@ -20,8 +20,8 @@ def log_radio(location: str, latitude: str, longitude: str, station: str, url: s
     # add statistics to stats file 
     columns = ["name", "location", "latitude", "longitude", "date", "count", "url"]
     try:
-        stats = pd.read_csv(stations_listened, )
-        stats.fillna("", inplace=True)
+        stats = pd.read_csv(stations_listened, dtype={'date': str})
+        stats.fillna({"date": ""}, inplace=True)
 
     except (FileNotFoundError, pd.errors.EmptyDataError):
         stats = pd.DataFrame(columns=columns)
