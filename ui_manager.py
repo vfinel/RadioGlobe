@@ -1,5 +1,7 @@
 #! /usr/bin/python3
+import subprocess
 import time
+
 from button import Button_Manager
 from dial import Dial
 
@@ -45,7 +47,7 @@ class UI_Manager:
                     self.button_manager.clear("Jog_push")
                     break
                 else:
-                    ui_events.append(["Random", 0])
+                    ui_events.append(["enter_menu", 0])
             elif event[0] == "Mid":
                 if event[1] > CALIBRATE_HOLD_TIME:
                     ui_events.append(["Calibrate", 0])
@@ -59,6 +61,19 @@ class UI_Manager:
 
         # Put the button events into the supplied queue (a list)
         receiving_queue.extend(ui_events)
+
+
+def shutdown(display_thread):
+    display_thread.clear()
+    time.sleep(0.5)
+    display_thread.message(
+        line_1="Shutting down...",
+        line_2="Please wait 10 sec",
+        line_3="before disconnecting",
+        line_4="power.",
+    )
+    time.sleep(0.2)  # make sure message is displayed completely before shutdown
+    subprocess.run(["sudo", "poweroff"])
 
 
 if __name__ == "__main__":

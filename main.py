@@ -1,10 +1,12 @@
 #! /usr/bin/python3
 import re
 import time
+import traceback
 import threading
 import subprocess
 import traceback
 import logging
+from menu import get_menu
 
 from streaming import Streamer, set_volume
 import database
@@ -12,7 +14,7 @@ from display import Display
 from loggers.log_radio import log_radio
 from loggers.log_software import get_logger
 from positional_encoders import Positional_Encoders, ENCODER_RESOLUTION
-from ui_manager import UI_Manager
+from ui_manager import UI_Manager, shutdown
 from rgb_led import RGB_LED
 from scheduler import Scheduler
 import os
@@ -30,9 +32,9 @@ jog = 0
 last_jog = 0
 state_entry = True
 volume_disp = 0
+root_menu = None
 
 file_logger = get_logger()
-
 
 ui_manager = UI_Manager()
 
@@ -90,70 +92,91 @@ def Process_UI_Events():
     global ui_manager
     global encoders_thread
     global rgb_led
+    global root_menu
+    global display_thread
+    global stations_list
+    global location_name
+    global url_list
 
-    ui_events = []
-    ui_manager.update(ui_events)
+    if root_menu is None:
+        ui_events = []
+        ui_manager.update(ui_events)
 
-    for event in ui_events:
-        if event[0] == "Jog":
-            if event[1] == 1:
-                # Next station
-                jog += 1
-            elif event[1] == -1:
-                # Previous station
-                jog -= 1
-            print(f"turning jog to position {jog}")
+        for event in ui_events:
+            if event[0] == "Jog":
+                if event[1] == 1:
+                    # Next station
+                    jog += 1
+                elif event[1] == -1:
+                    # Previous station
+                    jog -= 1
+                print(f"turning jog to position {jog}")
 
-        elif event[0] == "Volume":
-            if event[1] == 1:
-                volume += VOLUME_INCREMENT
-                volume = set_volume(volume)
-                volume_display = True
-                scheduler.attach_timer(Clear_Volume_Display, 3)
-                rgb_led.set_static(
-                    "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
-                )
-                print(("Volume up: {}%").format(volume))
-            elif event[1] == -1:
-                if state == "shutdown_confirm":
-                    Back_To_Tuning()
-                else:
-                    volume -= VOLUME_INCREMENT
+            elif event[0] == "Volume":
+                if event[1] == 1:
+                    volume += VOLUME_INCREMENT
                     volume = set_volume(volume)
                     volume_display = True
                     scheduler.attach_timer(Clear_Volume_Display, 3)
                     rgb_led.set_static(
                         "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
                     )
-                    print(("Volume down: {}%").format(volume))
+                    print(("Volume up: {}%").format(volume))
+                elif event[1] == -1:
+                    if state == "shutdown_confirm":
+                        Back_To_Tuning()
+                    else:
+                        volume -= VOLUME_INCREMENT
+                        volume = set_volume(volume)
+                        volume_display = True
+                        scheduler.attach_timer(Clear_Volume_Display, 3)
+                        rgb_led.set_static(
+                            "BLUE", timeout_sec=0.5, restore_previous_on_timeout=True
+                        )
+                        print(("Volume down: {}%").format(volume))
 
-        elif event[0] == "Random":
-            print("Toggle jog mode - not implemented")
+            elif event[0] == "enter_menu":
+                root_menu = get_menu()
 
-        elif event[0] == "Shutdown":
-            state = "shutdown_confirm"
-            state_entry = True
-
-        elif event[0] == "Calibrate":
-            # Zero the positional encoders
-            offsets = encoders_thread.zero()
-            database.Save_Calibration(offsets[0], offsets[1])
-            rgb_led.set_static(
-                "GREEN", timeout_sec=0.5, restore_previous_on_timeout=True
-            )
-            print("Calibrated")
-            display_thread.message(
-                line_1="", line_2="Calibrated!", line_3="", line_4=""
-            )
-
-            time.sleep(1)
-
-        elif event[0] == "Confirm":
-            if state == "shutdown_confirm":
-                state = "shutdown"
+            elif event[0] == "Shutdown":
+                state = "shutdown_confirm"
                 state_entry = True
-            else:
-                pass
+
+            elif event[0] == "Calibrate":
+                # Zero the positional encoders
+                offsets = encoders_thread.zero()
+                database.Save_Calibration(offsets[0], offsets[1])
+                rgb_led.set_static(
+                    "GREEN", timeout_sec=0.5, restore_previous_on_timeout=True
+                )
+                print("Calibrated")
+                display_thread.message(
+                    line_1="", line_2="Calibrated!", line_3="", line_4=""
+                )
+
+                time.sleep(1)
+
+            elif event[0] == "Confirm":
+                if state == "shutdown_confirm":
+                    state = "shutdown"
+                    state_entry = True
+                else:
+                    pass
+
+    if root_menu is not None:
+        # not an else, so that menu appears immediately after button press
+        station_info = {
+            "name": stations_list[jog],
+            "url": url_list[jog],
+            "location": location_name,
+        }
+        menu_result = root_menu.process_iteration(
+            display_thread,
+            ui_manager,
+            station_info,
+        )
+        if menu_result == "exit":
+            root_menu = None
 
 
 def update_display():
@@ -297,152 +320,150 @@ def start_streaming_radio_state():
     scheduler.attach_timer(print_radio_state, 2, one_shot=False)
 
 
-# PROGRAM START
-play_radio("radio-fx/oxp.wav")
-database.Load_Map()
-encoder_offsets = database.Load_Calibration()
+try:
+    # PROGRAM START
+    play_radio("radio-fx/oxp.wav")
+    database.Load_Map()
+    encoder_offsets = database.Load_Calibration()
 
-# Positional encoders - used to select latitude and longitude
-encoders_thread = Positional_Encoders(
-    2, "Encoders", encoder_offsets[0], encoder_offsets[1]
-)
-encoders_thread.start()
+    # Positional encoders - used to select latitude and longitude
+    encoders_thread = Positional_Encoders(
+        2, "Encoders", encoder_offsets[0], encoder_offsets[1]
+    )
+    encoders_thread.start()
 
-display_thread = Display(3, "Display")
-display_thread.start()
+    display_thread = Display(3, "Display")
+    display_thread.start()
 
-rgb_led = RGB_LED(20, "RGB_LED")
-rgb_led.start()
+    rgb_led = RGB_LED(20, "RGB_LED")
+    rgb_led.start()
 
-scheduler = Scheduler(50, "SCHEDULER")
-scheduler.start()
+    scheduler = Scheduler(50, "SCHEDULER")
+    scheduler.start()
 
-set_volume(volume)
+    set_volume(volume)
 
-fx_folder = "radio-fx"
-fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
-noise_player = create_noise_player()
-scheduler.attach_timer(start_streaming_radio_state, 5, one_shot=True)
+    fx_folder = "radio-fx"
+    fx_files = [f for f in os.listdir(fx_folder) if f.endswith(".wav")]
+    noise_player = create_noise_player()
+    scheduler.attach_timer(start_streaming_radio_state, 5, one_shot=True)
 
-while True:
-    if state_entry:
-        print(" ")  # add line to ease consol output reading
-        logging.info(f"entering {state = }")
-
-    if state == "start":
+    while True:
         if state_entry:
+            print(" ")  # add line to ease consol output reading
+            logging.info(f"entering {state = }")
+
+        if state == "start":
+            if state_entry:
+                # Entry - setup state
+                state_entry = False
+                display_thread.message(
+                    line_1="Radio Globe",
+                    line_2="Made for DesignSpark",
+                    line_3="by Jude Pullen and",
+                    line_4="Donald Robson, 2020",
+                )
+                scheduler.attach_timer(Back_To_Tuning, 1)
+                noise_player.play()
+
+        elif state == "tuning":
             # Entry - setup state
-            state_entry = False
-            display_thread.message(
-                line_1="Radio Globe",
-                line_2="Made for DesignSpark",
-                line_3="by Jude Pullen and",
-                line_4="Donald Robson, 2020",
-            )
-            scheduler.attach_timer(Back_To_Tuning, 1)
-            noise_player.play()
+            if state_entry:
+                state_entry = False
+                rgb_led.set_blink("WHITE")
+                display_thread.clear()
+                logging.info("playing noise")
+                noise_player.set_pause(0)  # resume noise
+                location, location_name, stations_list, url_list = search_and_play()
+                if location_name == "":
+                    logging.info("no local radio found")
 
-    elif state == "tuning":
-        # Entry - setup state
-        if state_entry:
-            state_entry = False
-            rgb_led.set_blink("WHITE")
-            display_thread.clear()
-            logging.info("playing noise")
-            noise_player.set_pause(0)  # resume noise
-            location, location_name, stations_list, url_list = search_and_play()
-            if location_name == "":
-                logging.info("no local radio found")
+                else:  # radio found and playing
+                    logging.info(f"location found: {location_name}")
 
-            else:  # radio found and playing
-                logging.info(f"location found: {location_name}")
-
-        # Normal operation
-        else:
-            location, location_name, stations_list, url_list = search_and_play()
-
-    elif state == "playing":
-        # Entry - setup
-        if state_entry:
-            state_entry = False
-            jog = 0
-            last_jog = 0
-            rgb_led.set_static("RED", timeout_sec=3.0)
-
-            # Get display coordinates - from file, so there's no jumping about
-            latitude = database.stations_data[location]["coords"]["n"]
-            longitude = database.stations_data[location]["coords"]["e"]
-
-            # update display (otherwie the sleep() is messing things up)
-            display_thread.clear()
-            update_display()
-
-            radio_player = play_station_and_stop_noise(url_list[jog])
-
-        # Exit back to tuning state if latch has 'come unstuck'
-        elif not encoders_thread.is_latched():
-            logging.info(f"encoders not latched {encoders_thread.get_readings()}")
-            radio_player.set_pause(1)
-            state = "tuning"
-            state_entry = True
-
-        # If the jog dial is used, stop the stream and restart with the new url
-        elif jog != last_jog:
-            # Restrict the jog dial value to the bounds of stations_list
-            jog %= len(stations_list)
-            last_jog = jog
-
-            logging.info("pausing radio and resuming noise")
-            radio_player.set_pause(1)
-            noise_player.set_pause(0)
-            radio_player = play_station_and_stop_noise(url_list[jog])
-
-        # Idle operation - just keep display updated
-        else:
-            if volume_display:
-                volume_disp = volume
+            # Normal operation
             else:
-                volume_disp = 0
+                location, location_name, stations_list, url_list = search_and_play()
 
-            update_display()
+        elif state == "playing":
+            # Entry - setup
+            if state_entry:
+                state_entry = False
+                jog = 0
+                last_jog = 0
+                rgb_led.set_static("RED", timeout_sec=3.0)
 
-    elif state == "shutdown_confirm":
-        if state_entry:
-            state_entry = False
-            display_thread.clear()
-            time.sleep(0.1)
-            display_thread.message(
-                line_1="Really shut down?",
-                line_2="<- Press mid button ",
-                line_3="to confirm or",
-                line_4="<- bottom to cancel.",
-            )
+                # Get display coordinates - from file, so there's no jumping about
+                latitude = database.stations_data[location]["coords"]["n"]
+                longitude = database.stations_data[location]["coords"]["e"]
 
-            # Auto-cancel in 5s
-            scheduler.attach_timer(Back_To_Tuning, 5)
+                # update display (otherwie the sleep() is messing things up)
+                display_thread.clear()
+                update_display()
 
-    elif state == "shutdown":
-        if state_entry:
-            state_entry = False
-            display_thread.clear()
-            time.sleep(0.1)
-            display_thread.message(
-                line_1="Shutting down...",
-                line_2="Please wait 10 sec",
-                line_3="before disconnecting",
-                line_4="power.",
-            )
-            time.sleep(0.1)  # make sure message is displayed completely before shutdown
-            subprocess.run(["sudo", "poweroff"])
+                radio_player = play_station_and_stop_noise(url_list[jog])
 
-    else:
-        # Just in case!
-        state = "tuning"
+            # Exit back to tuning state if latch has 'come unstuck'
+            elif not encoders_thread.is_latched():
+                logging.info(f"encoders not latched {encoders_thread.get_readings()}")
+                radio_player.set_pause(1)
+                state = "tuning"
+                state_entry = True
 
-    Process_UI_Events()
+            # If the jog dial is used, stop the stream and restart with the new url
+            elif jog != last_jog:
+                # Restrict the jog dial value to the bounds of stations_list
+                jog %= len(stations_list)
+                last_jog = jog
 
-    # Avoid unnecessarily high polling
-    time.sleep(0.1)
+                logging.info("pausing radio and resuming noise")
+                radio_player.set_pause(1)
+                noise_player.set_pause(0)
+                radio_player = play_station_and_stop_noise(url_list[jog])
 
-# Clean up threads
-encoders_thread.join()
+            # Idle operation - just keep display updated
+            else:
+                if volume_display:
+                    volume_disp = volume
+                else:
+                    volume_disp = 0
+
+                update_display()
+
+        elif state == "shutdown_confirm":
+            if state_entry:
+                state_entry = False
+                display_thread.clear()
+                time.sleep(0.1)
+                display_thread.message(
+                    line_1="Really shut down?",
+                    line_2="<- Press mid button ",
+                    line_3="to confirm or",
+                    line_4="<- bottom to cancel.",
+                )
+
+                # Auto-cancel in 5s
+                scheduler.attach_timer(Back_To_Tuning, 5)
+
+        elif state == "shutdown":
+            if state_entry:
+                state_entry = False
+                shutdown(display_thread)
+
+        else:
+            # Just in case!
+            state = "tuning"
+
+        Process_UI_Events()
+
+        # Avoid unnecessarily high polling
+        time.sleep(0.1)
+
+except Exception:
+    logging.error(traceback.format_exc())
+
+    # Clean up threads
+    encoders_thread.join()
+
+    logging.info("restarting main after unexpected crash...")
+    subprocess.call(["sh", "./restart_main.sh"])

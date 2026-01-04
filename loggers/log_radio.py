@@ -96,11 +96,14 @@ def make_listening_stats():
     # remove radios that can be streamed from several locations
     db.drop_duplicates(subset="url", inplace=True)
 
-    ratio = stats.shape[0] / db.shape[0]
+    n_total = db.shape[0]
+    n_listened = stats.shape[0]
+    ratio = n_listened / n_total
 
-    print(f"There are (at least) {db.shape[0]} stations in the world")
-    print(f"you listened to {stats.shape[0]} stations...")
+    print(f"There are (at least) {n_total} stations in the world")
+    print(f"you listened to {n_listened} stations...")
     print(f"that is {100 * ratio:.2f}% of the world's radios !")
+    return n_total, n_listened, ratio
 
 
 def parse_args():
